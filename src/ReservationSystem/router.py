@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ReservationSystem.models import ReservationBook
 from ReservationSystem.schemas import ReservationCreate, ReservationUpdate
+from ReservationSystem.utils import long_operation
 from database import get_async_session
 
 router = APIRouter(
@@ -48,3 +49,9 @@ async def change_deadline_date(request: ReservationUpdate, session: AsyncSession
     await session.commit()
     return {"status": 200,
             "details": order}
+
+
+@router.get("/celery")
+def celery_task() -> dict:
+    long_operation.delay()
+    return {"status": 200}
