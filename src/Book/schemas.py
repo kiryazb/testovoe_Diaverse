@@ -5,6 +5,7 @@ GenreEnum = Literal["Romance", "Fantasy", "Science Fiction", "Mystery", "Horror"
 
 
 class Genre(BaseModel):
+    id: int
     name: GenreEnum
 
 
@@ -32,6 +33,7 @@ class Book(BaseModel):
     id: int
     name: str
     page_count: int
+    price: int
     author_id: int
     genres: List[Genre]
 

@@ -1,13 +1,13 @@
-from typing import Union
+from cmath import inf
+from typing import Union, List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from Book.models import Book, Genre
+from Book.models import Book, Genre, BookGenre
 from Book.schemas import BookRead, BookCreate, BookUpdate, BookDelete, GenreRead, GenreCreate, GenreUpdate, GenreDelete
 from User.models import User
-from User.schemas import UserRead, UserCreate, UserUpdate, UserDelete
 from database import get_async_session
 
 router = APIRouter(
@@ -16,9 +16,9 @@ router = APIRouter(
 )
 
 
-@router.get("/{genre_name}", response_model=Union[GenreRead, None])
-async def read_genre(genre_name: str, session=Depends(get_async_session)) -> Union[GenreRead, None]:
-    query = select(Genre).where(Genre.name == genre_name)
+@router.get("/genre/{genre_id}", response_model=Union[GenreRead, None])
+async def read_genre(genre_id: int, session=Depends(get_async_session)) -> Union[GenreRead, None]:
+    query = select(Genre).where(Genre.id == genre_id)
     genre = await session.execute(query)
     genre = genre.fetchone()
     if not genre:
@@ -27,7 +27,7 @@ async def read_genre(genre_name: str, session=Depends(get_async_session)) -> Uni
     return genre_read
 
 
-@router.post("/", response_model=Union[GenreRead, None])
+@router.post("/genre", response_model=Union[GenreRead, None])
 async def create_genre(genre: GenreCreate, session=Depends(get_async_session)) -> Union[GenreRead, None]:
     new_genre = Genre(**genre.dict())
     session.add(new_genre)
@@ -35,9 +35,9 @@ async def create_genre(genre: GenreCreate, session=Depends(get_async_session)) -
     return GenreRead.from_orm(new_genre)
 
 
-@router.put("/", response_model=Union[GenreRead, None])
+@router.put("/genre", response_model=Union[GenreRead, None])
 async def update_genre(genre: GenreUpdate, session=Depends(get_async_session)) -> Union[GenreRead, None]:
-    query = select(Genre).where(Genre.name == genre.name)
+    query = select(Genre).where(Genre.id == genre.id)
     current_genre = await session.execute(query)
     current_genre = current_genre.scalar()
     if current_genre:
@@ -50,9 +50,9 @@ async def update_genre(genre: GenreUpdate, session=Depends(get_async_session)) -
     return None
 
 
-@router.delete("/")
-async def update_genre(genre: GenreDelete, session=Depends(get_async_session)) -> dict:
-    query = delete(Genre).where(Genre.name == genre.name)
+@router.delete("/genre")
+async def delete_genre(genre: GenreDelete, session=Depends(get_async_session)) -> dict:
+    query = delete(Genre).where(Genre.id == genre.id)
     await session.execute(query)
     await session.commit()
     return {"detail": f"User {genre.id} deleted"}
@@ -72,7 +72,7 @@ async def read_book(book_id: int, session=Depends(get_async_session)) -> Union[B
 async def create_book(book: BookCreate, session: AsyncSession = Depends(get_async_session)) -> dict:
     genre_names = [genre.name for genre in book.genres]
     genres = (await session.execute(select(Genre).where(Genre.name.in_(genre_names)))).scalars().all()
-    new_book = Book(name=book.name, page_count=book.page_count, author_id=book.author_id)
+    new_book = Book(name=book.name, page_count=book.page_count, price=book.price, author_id=book.author_id)
     new_book.genres = genres
     session.add(new_book)
     await session.commit()
@@ -118,3 +118,32 @@ async def delete_book(book: BookDelete, session=Depends(get_async_session)) -> d
     await session.execute(query)
     await session.commit()
     return {"detail": f"Book {book.id} deleted"}
+
+
+@router.get("/")
+async def book_filter(
+        price_from: int = Query(0, ge=0),
+        price_to: int = Query(inf, gt=0),
+        genres: List[int] = Query([]),
+        authors: List[int] = Query([]),
+        session: AsyncSession = Depends(get_async_session)
+):
+    if not genres:
+        genre_ids = (await session.execute(select(Genre.id))).scalars().all()
+    else:
+        genre_ids = genres
+
+    if not authors:
+        author_ids = (await session.execute(select(User.id))).scalars().all()
+    else:
+        author_ids = authors
+
+    query = select(Book).join(BookGenre).join(Genre).where(
+        Book.price >= price_from,
+        Book.price <= price_to,
+        Genre.id.in_(genre_ids),
+        Book.author_id.in_(author_ids)
+    ).group_by(Book.id)
+
+    books = (await session.execute(query)).scalars().all()
+    return books

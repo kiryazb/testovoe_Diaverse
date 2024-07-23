@@ -48,7 +48,7 @@ async def update_user(user: UserUpdate, session=Depends(get_async_session)) -> U
 
 
 @router.delete("/")
-async def update_user(user: UserDelete, session=Depends(get_async_session)) -> dict:
+async def delete_user(user: UserDelete, session=Depends(get_async_session)) -> dict:
     query = delete(User).where(User.id == user.id)
     await session.execute(query)
     await session.commit()

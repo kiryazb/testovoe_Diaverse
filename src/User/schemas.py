@@ -10,11 +10,11 @@ class User(BaseModel):
     avatar: bytes
 
 
-class UserCreate(BaseModel):
+class UserCreate(User):
     pass
 
 
-class UserRead(BaseModel):
+class UserRead(User):
     pass
 
     class Config:
@@ -22,7 +22,7 @@ class UserRead(BaseModel):
         from_attributes = True
 
 
-class UserUpdate(BaseModel):
+class UserUpdate(User):
     name: Optional[str] = None
     second_name: Optional[str] = None
     avatar: Optional[bytes] = None
