@@ -127,7 +127,7 @@ async def book_filter(
         genres: List[int] = Query([]),
         authors: List[int] = Query([]),
         session: AsyncSession = Depends(get_async_session)
-):
+) -> dict:
     if not genres:
         genre_ids = (await session.execute(select(Genre.id))).scalars().all()
     else:
@@ -146,4 +146,5 @@ async def book_filter(
     ).group_by(Book.id)
 
     books = (await session.execute(query)).scalars().all()
-    return books
+    return {"status": 200,
+            "details": books}
