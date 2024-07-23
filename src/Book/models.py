@@ -31,7 +31,7 @@ class Book(Base):
     page_count: Mapped[int] = mapped_column(Integer, nullable=False)
     author_id: Mapped[int] = mapped_column(Integer, ForeignKey(User.id))
 
-    genres = relationship(Genre, secondary="book_genre", backref="books")
+    genres = relationship(Genre, secondary="book_genre", backref="books", lazy='selectin')
 
 
 class BookGenre(Base):

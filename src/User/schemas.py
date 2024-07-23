@@ -3,18 +3,19 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class UserCreate(BaseModel):
+class User(BaseModel):
     id: int
     name: str
     second_name: str
     avatar: bytes
 
 
+class UserCreate(BaseModel):
+    pass
+
+
 class UserRead(BaseModel):
-    id: int
-    name: str
-    second_name: str
-    avatar: bytes | None
+    pass
 
     class Config:
         orm_mode = True
@@ -22,11 +23,10 @@ class UserRead(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    id: int
     name: Optional[str] = None
     second_name: Optional[str] = None
     avatar: Optional[bytes] = None
 
 
-class UserDelete(BaseModel):
-    id: int
+class UserDelete(User):
+    pass

@@ -44,8 +44,7 @@ async def update_user(user: UserUpdate, session=Depends(get_async_session)) -> U
                 setattr(current_user, key, value)
         await session.commit()
         return UserRead.from_orm(current_user)
-    else:
-        return None
+    return None
 
 
 @router.delete("/")
